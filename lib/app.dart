@@ -34,17 +34,23 @@ class _MainScreenState extends State<MainScreen> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(
-				title: Text(widget.title),
-			),
+			appBar: AppBar(title: Text(widget.title)),
 			body: Center(
-				child: Column(
-					mainAxisAlignment: MainAxisAlignment.center,
-					children: <Widget>[
-						Text('The belt has this many Chains per Inch:'),
-						Text('$_chainsPerInch', style: Theme.of(context).textTheme.display1),
-						Image.file(File(_imagePath)),
-					],
+				child: Padding(
+					padding: EdgeInsets.symmetric(vertical: 32.0),
+					child: Column(
+						mainAxisAlignment: MainAxisAlignment.center,
+						children: <Widget>[
+							Text('The belt has this many Chains per Inch:'),
+							Text('$_chainsPerInch', style: Theme.of(context).textTheme.display1),
+							Expanded(
+								child: Padding(
+									padding: EdgeInsets.only(top: 16.0),
+									child: _imagePath != "" ? Image.file(File(_imagePath)) : Text('')
+								),
+							),
+						],
+					),
 				),
 			),
 			floatingActionButton: FloatingActionButton(

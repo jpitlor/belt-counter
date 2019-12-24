@@ -1,6 +1,8 @@
+import 'dart:developer';
+import 'dart:io';
 import 'package:image/image.dart';
 
-getBeltDensity(String imagePath) {
+int getBeltDensity(String imagePath) {
 //	int ppi = getPpi(belt);
 
 
@@ -8,15 +10,13 @@ getBeltDensity(String imagePath) {
 }
 
 markPicture(String imagePath) {
-
+	Image image = _getImage(imagePath);
+//	Image thumbnail = copyResize(image, width: (image.width * 0.75).round());
+//	File(imagePath).writeAsBytesSync(encodePng(thumbnail));
 }
 
-_getImage(String imagePath) {
-
-}
-
-_writeImage(Image image, String path) {
-
+Image _getImage(String imagePath) {
+	return decodeImage(File(imagePath).readAsBytesSync());
 }
 
 _getPpi(Image belt) {
