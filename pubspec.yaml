@@ -1,0 +1,22 @@
+name: belt_counter
+description: Counting the density of conveyor belts
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
+
+dependencies:
+  image: ^2.1.5
+  flutter:
+    sdk: flutter
+  camera:
+  path_provider:
+  path:
+  cupertino_icons: ^0.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
