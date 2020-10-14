@@ -8,12 +8,12 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Belt Density Counter',
+      title: 'Chain Density Calculator',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MainScreen(title: 'Belt Density Counter'),
+      home: MainScreen(title: 'Chain Density Calculator'),
     );
   }
 }
