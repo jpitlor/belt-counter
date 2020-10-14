@@ -10,13 +10,11 @@ Tuple4<int, int, int, int> _marker;
 int getBeltDensity(String imagePath) {
 	Image image = _getImage(imagePath);
 	Image oneInch = _getOneSquareInchOfBelt(image);
-	oneInch = copyRotate(oneInch, 90);
 
 	bool inBelt = false;
 	int belts = 0;
 	for (int x = 0; x < oneInch.width; x++) {
 		bool isWhite = _isWhite(oneInch.getPixel(x, 2));
-		Logger.log("$x: $isWhite");
 
 		if (isWhite && !inBelt) belts++;
 		inBelt = isWhite;
@@ -27,31 +25,35 @@ int getBeltDensity(String imagePath) {
 
 markPicture(String imagePath) {
 	Image image = _getImage(imagePath);
-
+	int ppi = _getPpi(image);
 	Tuple4<int, int, int, int> marker = _findMarker(image);
+
+	for (int x = marker.item1 - ppi; x < marker.item1; x++) {
+		bool isWhite = _isWhite(image.getPixel(x, marker.item2 + 2));
+		drawRect(image, x, (marker.item2 + (ppi / 2)).floor(), x, marker.item2 + ppi, isWhite ? Color.fromRgb(255, 255, 255) : Color.fromRgb(0, 0, 0));
+		drawRect(image, x, marker.item2 + 10, x, (marker.item2 + (ppi / 2)).floor(), image.getPixel(x, 2));
+	}
+
 	drawRect(image, marker.item1, marker.item2, marker.item3, marker.item4, Color.fromRgb(255, 0, 0));
+	drawRect(image, marker.item1 - ppi, marker.item2, marker.item1, marker.item2 + ppi, Color.fromRgb(0, 255, 0));
 
-
-//	image = _getOneSquareInchOfBelt(image);
-	image = copyRotate(image, 90);
 	File(imagePath).writeAsBytesSync(encodePng(image));
 }
 
 Image _getImage(String imagePath) {
-	return decodeImage(File(imagePath).readAsBytesSync());
+	return copyRotate(decodeImage(File(imagePath).readAsBytesSync()), 90);
 }
 
 int _getPpi(Image image) {
 	Tuple4<int, int, int, int> marker = _findMarker(image);
-	return marker.item4 - marker.item2;
+	return min(marker.item4 - marker.item2, marker.item3 - marker.item1);
 }
 
 Image _getOneSquareInchOfBelt(Image image) {
 	Tuple4<int, int, int, int> marker = _findMarker(image);
 	int ppi = _getPpi(image);
 
-	int x = marker.item1 < ppi ? marker.item3 + 1 : marker.item1 - ppi;
-	return copyCrop(image, x, marker.item2, ppi, ppi);
+	return copyRotate(copyCrop(image, marker.item1 - ppi, marker.item2, ppi, ppi), 90);
 }
 
 Tuple4<int, int, int, int> _findMarker(Image image) {
@@ -79,11 +81,9 @@ bool _isGreen(int pixel) {
 	int red = pixel & 0xFF;
 	int green = (pixel & 0xFF00) >> 8;
 	int blue = (pixel & 0xFF0000) >> 16;
+	int tolerance = 20;
 
-	int minGreen = 150;
-	int maxNonGreen = 130;
-
-	return red < maxNonGreen && green > minGreen && blue < maxNonGreen;
+	return green > red + tolerance && green > blue + tolerance;
 }
 
 bool _isWhite(int pixel) {
@@ -91,12 +91,13 @@ bool _isWhite(int pixel) {
 	int green = (pixel & 0xFF00) >> 8;
 	int blue = (pixel & 0xFF0000) >> 16;
 
-	Logger.log("Checking RGB $red $green $blue (${pixel.toRadixString(16)})");
+	double tolerance = 2;
+	int min = 50;
 
-	int min = 100;
+//	Logger.log("${max(1.0 * red / green, 1.0 * green / red)} ${max(1.0 * red / blue, 1.0 * blue / red)} ${max(1.0 * green / blue, 1.0 * blue / green)}");
 
-	return ((red / green).abs() <= 1.05)
-		&& ((red / blue).abs() <= 1.05)
-		&& ((green / blue).abs() <= 1.05)
+	return (max(1.0 * red / green, 1.0 * green / red) <= tolerance)
+		&& (max(1.0 * red / blue, 1.0 * blue / red) <= tolerance)
+		&& (max(1.0 * green / blue, 1.0 * blue / green) <= tolerance)
 		&& red >= min && green >= min && blue >= min;
 }
