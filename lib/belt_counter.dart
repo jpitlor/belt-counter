@@ -1,71 +1,29 @@
-import 'dart:io';
 import 'dart:math';
 
-import 'package:camera/camera.dart';
 import 'package:image/image.dart';
 import 'package:tuple/tuple.dart';
 
 Tuple4<int, int, int, int> _marker;
 
-// https://github.com/flutter/flutter/issues/26348
-const shift = (0xFF << 24);
-Image convertCameraImageToImage(CameraImage image) {
-  try {
-    final int width = image.width;
-    final int height = image.height;
-    final int uvRowStride = image.planes[1].bytesPerRow;
-    final int uvPixelStride = image.planes[1].bytesPerPixel;
+int getBeltDensity(String imagePath, {bool annotateImage = false}) {
+  // var oneInch = _getOneSquareInchOfBelt(image);
+  //
+  // var inBelt = false;
+  // var belts = 0;
+  // for (var x = 0; x < oneInch.width; x++) {
+  //   var isWhite = _isWhite(oneInch.getPixel(x, 2));
+  //
+  //   if (isWhite && !inBelt) belts++;
+  //   inBelt = isWhite;
+  // }
 
-    print("uvRowStride: " + uvRowStride.toString());
-    print("uvPixelStride: " + uvPixelStride.toString());
-    var img = Image(width, height);
+  // return belts;
 
-    // Fill image buffer with plane[0] from YUV420_888
-    for (int x = 0; x < width; x++) {
-      for (int y = 0; y < height; y++) {
-        final int uvIndex = uvPixelStride * (x / 2).floor() + uvRowStride * (y / 2).floor();
-        final int index = y * width + x;
-
-        final yp = image.planes[0].bytes[index];
-        final up = image.planes[1].bytes[uvIndex];
-        final vp = image.planes[2].bytes[uvIndex];
-        // Calculate pixel color
-        int r = (yp + vp * 1436 / 1024 - 179).round().clamp(0, 255);
-        int g = (yp - up * 46549 / 131072 + 44 - vp * 93604 / 131072 + 91).round().clamp(0, 255);
-        int b = (yp + up * 1814 / 1024 - 227).round().clamp(0, 255);
-        // color: 0x FF  FF  FF  FF
-        //           A   B   G   R
-        img.data[index] = shift | (b << 16) | (g << 8) | r;
-      }
-    }
-
-    PngEncoder pngEncoder = new PngEncoder(level: 0, filter: 0);
-    List<int> png = pngEncoder.encodeImage(img);
-    return Image.fromBytes(width, height, png);
-  } catch (e) {
-    print(">>>>>>>>>>>> ERROR:" + e.toString());
-  }
-  return null;
+  return 5;
 }
 
-int getBeltDensity(Image image) {
-  var oneInch = _getOneSquareInchOfBelt(image);
-
-  var inBelt = false;
-  var belts = 0;
-  for (var x = 0; x < oneInch.width; x++) {
-    var isWhite = _isWhite(oneInch.getPixel(x, 2));
-
-    if (isWhite && !inBelt) belts++;
-    inBelt = isWhite;
-  }
-
-  return belts;
-}
-
-Image getImageAnnotations(Image image) {
-  var annotations = Image(image.width, image.height);
-
+void annotateImage(String imagePath, Image image) {
+  Image annotations = Image(image.width, image.height);
   // var ppi = _getPpi(image);
   // var marker = _findMarker(image);
   //
@@ -79,11 +37,7 @@ Image getImageAnnotations(Image image) {
   // drawRect(annotations, marker.item1, marker.item2, marker.item3, marker.item4, Color.fromRgb(255, 0, 0));
   // drawRect(annotations, marker.item1 - ppi, marker.item2, marker.item1, marker.item2 + ppi, Color.fromRgb(0, 255, 0));
 
-  return annotations;
-}
-
-Image _getImage(String imagePath) {
-  return copyRotate(decodeImage(File(imagePath).readAsBytesSync()), 90);
+  drawRect(annotations, 10, 10, 100, 100, Color.fromRgb(255, 255, 0));
 }
 
 int _getPpi(Image image) {

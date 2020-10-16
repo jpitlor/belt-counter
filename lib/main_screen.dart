@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:belt_counter/belt_counter.dart';
+import 'package:belt_counter/custom_widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'instruction_dialog.dart';
 
@@ -15,41 +19,41 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  var _chainsPerInch = 0;
-  var _imageAnnotations = img.Image(200, 200);
-
-  CameraController _controller;
   Future<void> _initializeControllerFuture;
+
+  List<CameraDescription> _cameras;
+  CameraController _controller;
+  var _cameraNumber = 0;
+
+  final _instructionDialog = InstructionDialog();
 
   @override
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized();
-
-    try {
-      _addCalculatorOverlay();
-    } catch (e) {
-      Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  void _addCalculatorOverlay() async {
-    final cameras = await availableCameras();
-    _controller = CameraController(cameras.first, ResolutionPreset.ultraHigh);
-    _initializeControllerFuture = _controller.initialize();
-    await _initializeControllerFuture;
-    // _controller.startImageStream(_onNewImageAvailable);
-  }
-
-  void _onNewImageAvailable(CameraImage cameraImage) {
-    final image = convertCameraImageToImage(cameraImage);
-    final chainsPerInch = getBeltDensity(image);
-    // final imageAnnotations = getImageAnnotations(image);
-
-    setState(() {
-      _chainsPerInch = chainsPerInch;
-      // _imageAnnotations = imageAnnotations;
+    availableCameras().then((cameras) {
+      _cameras = cameras;
+      _initCameraPreview();
     });
+  }
+
+  void _flipCamera() {
+    _cameraNumber = (_cameraNumber + 1) % _cameras.length;
+    _initCameraPreview();
+  }
+
+  void _initCameraPreview() async {
+    _controller = CameraController(_cameras[_cameraNumber], ResolutionPreset.ultraHigh);
+    setState(() {
+      _initializeControllerFuture = _controller.initialize();
+    });
+  }
+
+  void _takePicture(BuildContext context) async {
+    final path = join((await getTemporaryDirectory()).path, '${DateTime.now()}.png');
+    await _controller.takePicture(path);
+    await Navigator.push(context, MaterialPageRoute(builder: (context) => DisplayPictureScreen(imagePath: path)));
+    _initCameraPreview();
   }
 
   @override
@@ -61,49 +65,67 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Stack(children: [
-              CameraPreview(_controller),
-              Image.memory(_imageAnnotations.getBytes()),
-              Container(
-                padding: EdgeInsets.all(32.0),
-                alignment: Alignment.bottomLeft,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.center,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withAlpha(0),
-                      Colors.black12,
-                      Colors.black12,
-                      Colors.black54,
-                      Colors.black87
-                    ],
-                  ),
-                ),
-                child: Text(
-                  "$_chainsPerInch Chain${_chainsPerInch != 1 ? "s" : ""} per Inch",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20.0),
-                ),
+      body: Column(children: [
+        Expanded(
+          child: FutureLoader(
+            future: _initializeControllerFuture,
+            child: CameraPreview(_controller),
+          ),
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 64.0),
+          decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(icon: Icon(Icons.flip_camera_android, color: Colors.white), onPressed: _flipCamera),
+              IconButton(
+                icon: Icon(Icons.photo_camera, color: Colors.white),
+                iconSize: 48.0,
+                onPressed: () => _takePicture(context),
               ),
-            ]);
-          } else {
-            return Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Theme.of(context).accentColor,
-        child: Icon(Icons.help),
-        onPressed: () =>
-            showDialog(context: context, child: InstructionDialog()),
-      ),
+              IconButton(
+                icon: Icon(Icons.help_outline, color: Colors.white),
+                onPressed: () => showDialog(context: context, child: _instructionDialog),
+              ),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class DisplayPictureScreen extends StatelessWidget {
+  final String imagePath;
+
+  const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final chainsPerInch = getBeltDensity(imagePath, annotateImage: true);
+
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(backgroundColor: Colors.white.withAlpha(0), shadowColor: Colors.white.withAlpha(0), elevation: 0),
+      body: Stack(children: [
+        Positioned(left: 0, right: 0, child: Image.file(File(imagePath))),
+        Container(
+          padding: EdgeInsets.all(32.0),
+          alignment: Alignment.bottomLeft,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.center,
+              end: Alignment.bottomCenter,
+              colors: [Colors.black.withAlpha(0), Colors.black12, Colors.black12, Colors.black54, Colors.black87],
+            ),
+          ),
+          child: Text(
+            "$chainsPerInch ${plural("Chain", chainsPerInch)} per Inch",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0),
+          ),
+        ),
+      ]),
     );
   }
 }
