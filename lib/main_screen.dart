@@ -16,35 +16,29 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   var _chainsPerInch = 0;
-  img.Image _imageAnnotations;
-  var _loading = true;
+  var _imageAnnotations = img.Image(200, 200);
 
   CameraController _controller;
+  Future<void> _initializeControllerFuture;
 
   @override
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized();
-    _addCalculatorOverlay();
-  }
 
-  void _addCalculatorOverlay() async {
     try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty == true) {
-        Scaffold.of(context).showSnackBar(SnackBar(content: Text("No cameras available!")));
-      }
-
-      _controller = CameraController(cameras.first, ResolutionPreset.ultraHigh);
-      await _controller.initialize();
-      // _controller.startImageStream(_onNewImageAvailable);
-
-      setState(() {
-        _loading = false;
-      });
+      _addCalculatorOverlay();
     } catch (e) {
       Scaffold.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
+  }
+
+  void _addCalculatorOverlay() async {
+    final cameras = await availableCameras();
+    _controller = CameraController(cameras.first, ResolutionPreset.ultraHigh);
+    _initializeControllerFuture = _controller.initialize();
+    await _initializeControllerFuture;
+    // _controller.startImageStream(_onNewImageAvailable);
   }
 
   void _onNewImageAvailable(CameraImage cameraImage) {
@@ -66,15 +60,14 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final caption = "$_chainsPerInch Chain${_chainsPerInch != 1 ? "s" : ""} per Inch";
-    final captionStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0);
-
     return Scaffold(
-      body: _loading
-          ? Center(child: CircularProgressIndicator())
-          : Stack(children: [
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Stack(children: [
               CameraPreview(_controller),
-              // Image.memory(_imageAnnotations.getBytes()),
+              Image.memory(_imageAnnotations.getBytes()),
               Container(
                 padding: EdgeInsets.all(32.0),
                 alignment: Alignment.bottomLeft,
@@ -82,16 +75,35 @@ class _MainScreenState extends State<MainScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.center,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.black.withAlpha(0), Colors.black12, Colors.black12, Colors.black54, Colors.black87],
+                    colors: [
+                      Colors.black.withAlpha(0),
+                      Colors.black12,
+                      Colors.black12,
+                      Colors.black54,
+                      Colors.black87
+                    ],
                   ),
                 ),
-                child: Text(caption, style: captionStyle),
+                child: Text(
+                  "$_chainsPerInch Chain${_chainsPerInch != 1 ? "s" : ""} per Inch",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20.0),
+                ),
               ),
-            ]),
+            ]);
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
       floatingActionButton: FloatingActionButton(
-          backgroundColor: Theme.of(context).accentColor,
-          child: Icon(Icons.help),
-          onPressed: () => showDialog(context: context, child: InstructionDialog())),
+        backgroundColor: Theme.of(context).accentColor,
+        child: Icon(Icons.help),
+        onPressed: () =>
+            showDialog(context: context, child: InstructionDialog()),
+      ),
     );
   }
 }

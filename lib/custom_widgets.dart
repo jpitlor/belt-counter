@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class IconList extends StatelessWidget {
@@ -10,16 +9,22 @@ class IconList extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodyText2;
     return Column(
-        children: items
-            .map((item) => Padding(
+      children: items
+          .map((item) => Padding(
                 padding: EdgeInsets.only(bottom: 8.0),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Padding(
-                      padding: EdgeInsets.only(right: 8.0),
-                      child: Icon(Icons.check, size: style.fontSize, color: Colors.black87)),
-                  Flexible(child: Text(item, style: style, softWrap: true))
-                ])))
-            .toList());
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(right: 8.0),
+                        child: Icon(Icons.check,
+                            size: style.fontSize, color: Colors.black87),
+                      ),
+                      Flexible(child: Text(item, style: style, softWrap: true)),
+                    ]),
+              ))
+          .toList(),
+    );
   }
 }
 
