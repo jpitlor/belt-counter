@@ -37,7 +37,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.jordanpitlor.belt_counter"
+        applicationId "dev.pitlor.belt_counter"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()

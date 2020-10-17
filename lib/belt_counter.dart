@@ -5,7 +5,7 @@ import 'package:tuple/tuple.dart';
 
 Tuple4<int, int, int, int> _marker;
 
-int getBeltDensity(String imagePath, {bool annotateImage = false}) {
+int getBeltDensity(Image image) {
   // var oneInch = _getOneSquareInchOfBelt(image);
   //
   // var inBelt = false;
@@ -22,8 +22,7 @@ int getBeltDensity(String imagePath, {bool annotateImage = false}) {
   return 5;
 }
 
-void annotateImage(String imagePath, Image image) {
-  Image annotations = Image(image.width, image.height);
+Image annotateImage(Image image) {
   // var ppi = _getPpi(image);
   // var marker = _findMarker(image);
   //
@@ -37,7 +36,8 @@ void annotateImage(String imagePath, Image image) {
   // drawRect(annotations, marker.item1, marker.item2, marker.item3, marker.item4, Color.fromRgb(255, 0, 0));
   // drawRect(annotations, marker.item1 - ppi, marker.item2, marker.item1, marker.item2 + ppi, Color.fromRgb(0, 255, 0));
 
-  drawRect(annotations, 10, 10, 100, 100, Color.fromRgb(255, 255, 0));
+  drawRect(image, 10, 10, 100, 100, Color.fromRgb(255, 255, 0));
+  return image;
 }
 
 int _getPpi(Image image) {

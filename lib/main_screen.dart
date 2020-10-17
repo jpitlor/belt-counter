@@ -4,6 +4,7 @@ import 'package:belt_counter/belt_counter.dart';
 import 'package:belt_counter/custom_widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -78,7 +79,10 @@ class _MainScreenState extends State<MainScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              IconButton(icon: Icon(Icons.flip_camera_android, color: Colors.white), onPressed: _flipCamera),
+              IconButton(
+                icon: Icon(Icons.flip_camera_android, color: Colors.white),
+                onPressed: _flipCamera,
+              ),
               IconButton(
                 icon: Icon(Icons.photo_camera, color: Colors.white),
                 iconSize: 48.0,
@@ -103,13 +107,15 @@ class DisplayPictureScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chainsPerInch = getBeltDensity(imagePath, annotateImage: true);
+    final image = img.copyRotate(img.decodeImage(File(imagePath).readAsBytesSync()), 90);
+    final chainsPerInch = getBeltDensity(image);
+    final annotatedImage = annotateImage(image);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(backgroundColor: Colors.white.withAlpha(0), shadowColor: Colors.white.withAlpha(0), elevation: 0),
       body: Stack(children: [
-        Positioned(left: 0, right: 0, child: Image.file(File(imagePath))),
+        Positioned(left: 0, right: 0, child: Image.memory(img.encodePng(annotatedImage))),
         Container(
           padding: EdgeInsets.all(32.0),
           alignment: Alignment.bottomLeft,
