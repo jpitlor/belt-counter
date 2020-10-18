@@ -40,7 +40,7 @@ Tuple4<int, int, int, int> _getOneSquareInchOfBelt(Image image, Tuple4<int, int,
   } else if (marker.item3 + ppi < image.width) {
     // Right
     return Tuple4(marker.item3, marker.item4 - ppi, marker.item3 + ppi, marker.item4);
-  } else /* (if (marker.item4 + ppi < image.height) */ {
+  } else /* if (marker.item4 + ppi < image.height) */ {
     // Bottom
     return Tuple4(marker.item3 - ppi, marker.item4, marker.item3, marker.item4 + ppi);
   }
