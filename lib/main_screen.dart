@@ -108,14 +108,13 @@ class DisplayPictureScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = img.copyRotate(img.decodeImage(File(imagePath).readAsBytesSync()), 90);
-    final chainsPerInch = getBeltDensity(image);
-    final annotatedImage = annotateImage(image);
+    final annotations = getAnnotations(image);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(backgroundColor: Colors.white.withAlpha(0), shadowColor: Colors.white.withAlpha(0), elevation: 0),
       body: Stack(children: [
-        Positioned(left: 0, right: 0, child: Image.memory(img.encodePng(annotatedImage))),
+        Positioned(left: 0, right: 0, child: Image.file(File(imagePath))),
         Container(
           padding: EdgeInsets.all(32.0),
           alignment: Alignment.bottomLeft,
@@ -127,7 +126,7 @@ class DisplayPictureScreen extends StatelessWidget {
             ),
           ),
           child: Text(
-            "$chainsPerInch ${plural("Chain", chainsPerInch)} per Inch",
+            "${annotations.density} ${plural("Chain", annotations.density)} per Inch",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0),
           ),
         ),

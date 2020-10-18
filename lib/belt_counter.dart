@@ -3,62 +3,54 @@ import 'dart:math';
 import 'package:image/image.dart';
 import 'package:tuple/tuple.dart';
 
-Tuple4<int, int, int, int> _marker;
+class Annotations {
+  const Annotations({this.marker, this.sample, this.chains, this.density});
 
-int getBeltDensity(Image image) {
-  // var oneInch = _getOneSquareInchOfBelt(image);
-  //
-  // var inBelt = false;
-  // var belts = 0;
-  // for (var x = 0; x < oneInch.width; x++) {
-  //   var isWhite = _isWhite(oneInch.getPixel(x, 2));
-  //
-  //   if (isWhite && !inBelt) belts++;
-  //   inBelt = isWhite;
-  // }
-
-  // return belts;
-
-  return 5;
+  final Tuple4<int, int, int, int> marker;
+  final Tuple4<int, int, int, int> sample;
+  final List<Tuple2<int, int>> chains;
+  final int density;
 }
 
-Image annotateImage(Image image) {
-  // var ppi = _getPpi(image);
-  // var marker = _findMarker(image);
-  //
-  // for (var x = marker.item1 - ppi; x < marker.item1; x++) {
-  //   var isWhite = _isWhite(image.getPixel(x, marker.item2 + 2));
-  //   drawRect(annotations, x, (marker.item2 + (ppi / 2)).floor(), x, marker.item2 + ppi,
-  //       isWhite ? Color.fromRgb(255, 255, 255) : Color.fromRgb(0, 0, 0));
-  //   drawRect(annotations, x, marker.item2 + 10, x, (marker.item2 + (ppi / 2)).floor(), image.getPixel(x, 2));
-  // }
-  //
-  // drawRect(annotations, marker.item1, marker.item2, marker.item3, marker.item4, Color.fromRgb(255, 0, 0));
-  // drawRect(annotations, marker.item1 - ppi, marker.item2, marker.item1, marker.item2 + ppi, Color.fromRgb(0, 255, 0));
+Annotations getAnnotations(Image image) {
+  final marker = _findMarker(image);
+  final sample = _getOneSquareInchOfBelt(image, marker);
 
-  drawRect(image, 10, 10, 100, 100, Color.fromRgb(255, 255, 0));
-  return image;
+  var inBelt = false;
+  var belts = 0;
+  // TODO: How do we know which orientation the belt is right now?
+  for (var x = 0; x < sample.item4 - sample.item2; x++) {
+    var isWhite = _isWhite(image.getPixel(x, 2));
+
+    if (isWhite && !inBelt) belts++;
+    inBelt = isWhite;
+  }
+
+  return Annotations(marker: marker, sample: sample, chains: null, density: belts);
 }
 
-int _getPpi(Image image) {
-  var marker = _findMarker(image);
-  return min(marker.item4 - marker.item2, marker.item3 - marker.item1);
-}
-
-Image _getOneSquareInchOfBelt(Image image) {
-  var marker = _findMarker(image);
-  int ppi = _getPpi(image);
-
-  return copyRotate(copyCrop(image, marker.item1 - ppi, marker.item2, ppi, ppi), 90);
+Tuple4<int, int, int, int> _getOneSquareInchOfBelt(Image image, Tuple4<int, int, int, int> marker) {
+  final ppi = min(marker.item4 - marker.item2, marker.item3 - marker.item1);
+  if (marker.item1 - ppi > 0) {
+    // Left
+    return Tuple4(marker.item1 - ppi, marker.item2, marker.item1, marker.item2 + ppi);
+  } else if (marker.item2 - ppi > 0) {
+    // Top
+    return Tuple4(marker.item1, marker.item2 - ppi, marker.item1 + ppi, marker.item2);
+  } else if (marker.item3 + ppi < image.width) {
+    // Right
+    return Tuple4(marker.item3, marker.item4 - ppi, marker.item3 + ppi, marker.item4);
+  } else /* (if (marker.item4 + ppi < image.height) */ {
+    // Bottom
+    return Tuple4(marker.item3 - ppi, marker.item4, marker.item3, marker.item4 + ppi);
+  }
 }
 
 Tuple4<int, int, int, int> _findMarker(Image image) {
-  if (_marker != null) return _marker;
-
-  List<Tuple2<int, int>> greens = new List();
+  List<Tuple2<int, int>> greens = List();
   for (var y = 0; y < image.height; y++) {
     for (var x = 0; x < image.width; x++) {
-      if (_isGreen(image.getPixel(x, y))) greens.add(new Tuple2(x, y));
+      if (_isGreen(image.getPixel(x, y))) greens.add(Tuple2(x, y));
     }
   }
 
@@ -67,11 +59,9 @@ Tuple4<int, int, int, int> _findMarker(Image image) {
   var x2 = greens.map((x) => x.item1).reduce(max);
   var y2 = greens.map((x) => x.item2).reduce(max);
 
-  _marker = new Tuple4(x1, y1, x2, y2);
-  return _marker;
+  return Tuple4(x1, y1, x2, y2);
 }
 
-// Color is encoded in a Uint32 as #AABBGGRR
 bool _isGreen(int pixel) {
   var red = pixel & 0xFF;
   var green = (pixel & 0xFF00) >> 8;
