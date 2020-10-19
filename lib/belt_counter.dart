@@ -14,11 +14,10 @@ class Annotations {
 
 Annotations getAnnotations(Image image) {
   final marker = _findMarker(image);
-  final sample = _getOneSquareInchOfBelt(image, marker);
+  final sample = _findBeltSample(image, marker);
 
   var inBelt = false;
   var belts = 0;
-  // TODO: How do we know which orientation the belt is right now?
   for (var x = 0; x < sample.item4 - sample.item2; x++) {
     var isWhite = _isWhite(image.getPixel(x, 2));
 
@@ -29,7 +28,7 @@ Annotations getAnnotations(Image image) {
   return Annotations(marker: marker, sample: sample, chains: null, density: belts);
 }
 
-Tuple4<int, int, int, int> _getOneSquareInchOfBelt(Image image, Tuple4<int, int, int, int> marker) {
+Tuple4<int, int, int, int> _findBeltSample(Image image, Tuple4<int, int, int, int> marker) {
   final ppi = min(marker.item4 - marker.item2, marker.item3 - marker.item1);
   if (marker.item1 - ppi > 0) {
     // Left

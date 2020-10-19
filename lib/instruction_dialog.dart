@@ -29,8 +29,8 @@ class InstructionDialog extends StatelessWidget {
           ),
           IconList(items: [
             "Ensure the belt is well lit",
-            "Cut a rectangular green piece of paper 1 inch long tall and at least 2 inches wide",
-            "Put the paper on the belt, close to either parallel or perpendicular",
+            "Cut a rectangular green piece of paper 1 inch long tall and at least 2 inches wide, and put it on the belt",
+            "Take a picture of the paper on the belt, oriented such that the belt travels horizontally in the picture",
           ]),
         ],
       ),

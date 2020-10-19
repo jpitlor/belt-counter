@@ -1,13 +1,11 @@
-import 'dart:io';
-
-import 'package:belt_counter/belt_counter.dart';
 import 'package:belt_counter/custom_widgets.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
+import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'display_picture_screen.dart';
 import 'instruction_dialog.dart';
 
 class MainScreen extends StatefulWidget {
@@ -31,6 +29,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     WidgetsFlutterBinding.ensureInitialized();
     availableCameras().then((cameras) {
       _cameras = cameras;
@@ -60,6 +64,14 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _controller.dispose();
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     super.dispose();
   }
 
@@ -93,41 +105,6 @@ class _MainScreenState extends State<MainScreen> {
                 onPressed: () => showDialog(context: context, child: _instructionDialog),
               ),
             ],
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
-
-  const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final image = img.copyRotate(img.decodeImage(File(imagePath).readAsBytesSync()), 90);
-    final annotations = getAnnotations(image);
-
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(backgroundColor: Colors.white.withAlpha(0), shadowColor: Colors.white.withAlpha(0), elevation: 0),
-      body: Stack(children: [
-        Positioned(left: 0, right: 0, child: Image.file(File(imagePath))),
-        Container(
-          padding: EdgeInsets.all(32.0),
-          alignment: Alignment.bottomLeft,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.center,
-              end: Alignment.bottomCenter,
-              colors: [Colors.black.withAlpha(0), Colors.black12, Colors.black12, Colors.black54, Colors.black87],
-            ),
-          ),
-          child: Text(
-            "${annotations.density} ${plural("Chain", annotations.density)} per Inch",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0),
           ),
         ),
       ]),

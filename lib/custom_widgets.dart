@@ -57,6 +57,6 @@ class FutureLoader extends StatelessWidget {
   }
 }
 
-String plural(String base, int count) {
-  return count == 1 ? base : "${base}s";
+String toCountedString(String base, int count) {
+  return count == 1 ? "1 $base" : "$count ${base}s";
 }
