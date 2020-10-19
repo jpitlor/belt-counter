@@ -12,7 +12,10 @@ class Annotations {
   final int density;
 }
 
-Annotations getAnnotations(Image image) {
+Annotations getAnnotations(List<int> bytes) {
+  var image = decodeImage(bytes);
+  if (image.width > image.height) image = copyRotate(image, 90);
+
   final marker = _findMarker(image);
   final sample = _findBeltSample(image, marker);
 
@@ -57,6 +60,9 @@ Tuple4<int, int, int, int> _findMarker(Image image) {
   var y1 = greens.map((x) => x.item2).reduce(min);
   var x2 = greens.map((x) => x.item1).reduce(max);
   var y2 = greens.map((x) => x.item2).reduce(max);
+
+  print("($x1, $y1) -> ($x2, $y2)");
+  print("${image.width} x ${image.height}");
 
   return Tuple4(x1, y1, x2, y2);
 }

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 
 import 'belt_counter.dart';
 import 'custom_widgets.dart';
@@ -14,8 +13,7 @@ class DisplayPictureScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var image = File(imagePath).readAsBytesSync();
-
-    final annotations = getAnnotations(img.decodeImage(image));
+    final annotations = getAnnotations(image);
     var screen = MediaQuery.of(context).size;
 
     return Scaffold(
