@@ -1,15 +1,113 @@
 import 'dart:math';
 
+import 'package:belt_counter/util.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:image/image.dart';
 import 'package:tuple/tuple.dart';
 
 class Annotations {
-  const Annotations({this.marker, this.sample, this.chains, this.density});
+  Annotations({
+    Image image,
+    Tuple4<int, int, int, int> marker,
+    Tuple4<int, int, int, int> sample,
+    List<Tuple2<int, int>> chains,
+  }) {
+    final _marker = Image(image.width, image.height);
+    drawRectWithThickness(_marker, marker, material.Colors.green.value, 4);
+    drawRectWithThickness(_marker, sample, material.Colors.tealAccent.value, 4);
+    this.boxes = encodePng(_marker);
 
-  final Tuple4<int, int, int, int> marker;
-  final Tuple4<int, int, int, int> sample;
-  final List<Tuple2<int, int>> chains;
-  final int density;
+    final _sample = Image(image.width, image.height);
+    final padding = image.width ~/ 5;
+    drawRectWithThickness(_sample, sample, material.Colors.tealAccent.value, 4);
+    drawLine(
+      _sample,
+      sample.item1,
+      sample.item2,
+      padding,
+      image.height - image.width,
+      material.Colors.white.value,
+      thickness: 2,
+    );
+    drawLine(
+      _sample,
+      sample.item3,
+      sample.item2,
+      padding + image.width - (2 * padding),
+      image.height - image.width,
+      material.Colors.white.value,
+      thickness: 2,
+    );
+    drawLine(
+      _sample,
+      sample.item3,
+      sample.item4,
+      padding + image.width - (2 * padding),
+      image.height - (2 * padding),
+      material.Colors.white.value,
+      thickness: 2,
+    );
+    drawLine(
+      _sample,
+      sample.item1,
+      sample.item4,
+      padding,
+      image.height - (2 * padding),
+      material.Colors.white.value,
+      thickness: 2,
+    );
+    copyInto(
+      _sample,
+      copyRotate(
+        copyResize(
+          copyCrop(image, sample.item1, sample.item2, sample.item3 - sample.item1, sample.item4 - sample.item2),
+          width: image.width - (2 * padding),
+          height: image.width - (2 * padding),
+        ),
+        90,
+      ),
+      dstX: padding,
+      dstY: image.height - image.width,
+      srcX: 0,
+      srcY: 0,
+      srcW: image.width - (2 * padding),
+      srcH: image.width - (2 * padding),
+    );
+    drawRectWithThickness(
+      _sample,
+      toCoordinates(padding, image.height - image.width, image.width - (2 * padding), image.width - (2 * padding)),
+      material.Colors.tealAccent.value,
+      4,
+    );
+
+    final densities = List<int>();
+    for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
+      final row = chains.where((element) => element.item2 == y);
+      print("$y: ${row.length}");
+      drawString(_sample, arial_24, sample.item1 - 10, y, "→", color: material.Colors.white.value);
+      densities.add(row.length);
+      for (var value in row) {
+        drawCircle(_sample, value.item1, value.item2, 4, material.Colors.white.value);
+        final dx = value.item1 - sample.item1;
+        final dy = value.item2 - sample.item2;
+        drawCircleWithThickness(
+          image,
+          padding + dx,
+          image.height - image.width + dy,
+          4,
+          material.Colors.white.value,
+          2,
+        );
+      }
+    }
+    this.sample = encodePng(_sample);
+
+    this.density = densities.reduce((value, element) => value + element) ~/ densities.length;
+  }
+
+  List<int> boxes;
+  List<int> sample;
+  int density;
 }
 
 Annotations getAnnotations(List<int> bytes) {
@@ -20,15 +118,19 @@ Annotations getAnnotations(List<int> bytes) {
   final sample = _findBeltSample(image, marker);
 
   var inBelt = false;
-  var belts = 0;
-  for (var x = 0; x < sample.item4 - sample.item2; x++) {
-    var isWhite = _isWhite(image.getPixel(x, 2));
-
-    if (isWhite && !inBelt) belts++;
-    inBelt = isWhite;
+  final chains = List<Tuple2<int, int>>();
+  for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
+    inBelt = false;
+    for (var x = sample.item1; x < sample.item3; x++) {
+      var isWhite = _isWhite(image.getPixel(x, y));
+      // print("($x, $y) - $isWhite");
+      if (isWhite && !inBelt) chains.add(Tuple2(x, y));
+      // print("New belt! ($x, $y)");
+      inBelt = isWhite;
+    }
   }
 
-  return Annotations(marker: marker, sample: sample, chains: null, density: belts);
+  return Annotations(image: image, marker: marker, sample: sample, chains: chains);
 }
 
 Tuple4<int, int, int, int> _findBeltSample(Image image, Tuple4<int, int, int, int> marker) {
@@ -60,9 +162,6 @@ Tuple4<int, int, int, int> _findMarker(Image image) {
   var y1 = greens.map((x) => x.item2).reduce(min);
   var x2 = greens.map((x) => x.item1).reduce(max);
   var y2 = greens.map((x) => x.item2).reduce(max);
-
-  print("($x1, $y1) -> ($x2, $y2)");
-  print("${image.width} x ${image.height}");
 
   return Tuple4(x1, y1, x2, y2);
 }
