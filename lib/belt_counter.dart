@@ -1,9 +1,10 @@
 import 'dart:math';
 
-import 'package:belt_counter/util.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:image/image.dart';
 import 'package:tuple/tuple.dart';
+
+import 'util.dart';
 
 class Annotations {
   Annotations({
@@ -81,22 +82,30 @@ class Annotations {
     );
 
     final densities = List<int>();
+    final sampleWidth = sample.item3 - sample.item1;
+    final enlargedWidth = image.width - (2 * padding);
     for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
       final row = chains.where((element) => element.item2 == y);
-      print("$y: ${row.length}");
-      drawString(_sample, arial_24, sample.item1 - 10, y, "→", color: material.Colors.white.value);
+      drawString(
+        _sample,
+        arial_48,
+        200, // padding,
+        200, // image.height - image.width + y * (enlargedWidth ~/ sampleWidth),
+        "->",
+        color: material.Colors.white.value,
+      );
       densities.add(row.length);
       for (var value in row) {
-        drawCircle(_sample, value.item1, value.item2, 4, material.Colors.white.value);
-        final dx = value.item1 - sample.item1;
-        final dy = value.item2 - sample.item2;
+        final dx = (value.item1 - sample.item1) * (enlargedWidth ~/ sampleWidth);
+        final dy = (value.item2 - sample.item2) * (enlargedWidth ~/ sampleWidth);
+
         drawCircleWithThickness(
-          image,
+          _sample,
           padding + dx,
           image.height - image.width + dy,
-          4,
+          8,
           material.Colors.white.value,
-          2,
+          4,
         );
       }
     }
@@ -123,9 +132,7 @@ Annotations getAnnotations(List<int> bytes) {
     inBelt = false;
     for (var x = sample.item1; x < sample.item3; x++) {
       var isWhite = _isWhite(image.getPixel(x, y));
-      // print("($x, $y) - $isWhite");
       if (isWhite && !inBelt) chains.add(Tuple2(x, y));
-      // print("New belt! ($x, $y)");
       inBelt = isWhite;
     }
   }
