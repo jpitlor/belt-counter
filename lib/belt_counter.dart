@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart' as material;
+import 'package:flutter/material.dart' show Colors;
 import 'package:image/image.dart';
 import 'package:tuple/tuple.dart';
 
@@ -14,49 +14,17 @@ class Annotations {
     List<Tuple2<int, int>> chains,
   }) {
     final _marker = Image(image.width, image.height);
-    drawRectWithThickness(_marker, marker, material.Colors.green.value, 4);
-    drawRectWithThickness(_marker, sample, material.Colors.tealAccent.value, 4);
+    _marker.drawRect(marker, color: Colors.green);
+    _marker.drawRect(sample, color: Colors.tealAccent);
     this.boxes = encodePng(_marker);
 
     final _sample = Image(image.width, image.height);
     final padding = image.width ~/ 5;
-    drawRectWithThickness(_sample, sample, material.Colors.tealAccent.value, 4);
-    drawLine(
-      _sample,
-      sample.item1,
-      sample.item2,
-      padding,
-      image.height - image.width,
-      material.Colors.white.value,
-      thickness: 2,
-    );
-    drawLine(
-      _sample,
-      sample.item3,
-      sample.item2,
-      padding + image.width - (2 * padding),
-      image.height - image.width,
-      material.Colors.white.value,
-      thickness: 2,
-    );
-    drawLine(
-      _sample,
-      sample.item3,
-      sample.item4,
-      padding + image.width - (2 * padding),
-      image.height - (2 * padding),
-      material.Colors.white.value,
-      thickness: 2,
-    );
-    drawLine(
-      _sample,
-      sample.item1,
-      sample.item4,
-      padding,
-      image.height - (2 * padding),
-      material.Colors.white.value,
-      thickness: 2,
-    );
+    _sample.drawRect(sample, color: Colors.tealAccent);
+    _sample.drawLine(sample.item1, sample.item2, padding, image.height - image.width);
+    _sample.drawLine(sample.item3, sample.item2, padding + image.width - (2 * padding), image.height - image.width);
+    _sample.drawLine(sample.item1, sample.item4, padding, image.height - (2 * padding));
+    _sample.drawLine(sample.item3, sample.item4, padding + image.width - (2 * padding), image.height - (2 * padding));
     copyInto(
       _sample,
       copyRotate(
@@ -74,39 +42,20 @@ class Annotations {
       srcW: image.width - (2 * padding),
       srcH: image.width - (2 * padding),
     );
-    drawRectWithThickness(
-      _sample,
-      toCoordinates(padding, image.height - image.width, image.width - (2 * padding), image.width - (2 * padding)),
-      material.Colors.tealAccent.value,
-      4,
-    );
+    final sideSize = image.width - (2 * padding);
+    _sample.drawRect(toCoordinates(padding, image.height - image.width, sideSize, sideSize), color: Colors.tealAccent);
 
     final densities = List<int>();
     final sampleWidth = sample.item3 - sample.item1;
     final enlargedWidth = image.width - (2 * padding);
     for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
       final row = chains.where((element) => element.item2 == y);
-      drawString(
-        _sample,
-        arial_48,
-        200, // padding,
-        200, // image.height - image.width + y * (enlargedWidth ~/ sampleWidth),
-        "->",
-        color: material.Colors.white.value,
-      );
       densities.add(row.length);
       for (var value in row) {
         final dx = (value.item1 - sample.item1) * (enlargedWidth ~/ sampleWidth);
         final dy = (value.item2 - sample.item2) * (enlargedWidth ~/ sampleWidth);
 
-        drawCircleWithThickness(
-          _sample,
-          padding + dx,
-          image.height - image.width + dy,
-          8,
-          material.Colors.white.value,
-          4,
-        );
+        _sample.drawCircle(padding + dx, image.height - image.width + dy, 8, thickness: 4);
       }
     }
     this.sample = encodePng(_sample);

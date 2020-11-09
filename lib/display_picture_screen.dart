@@ -136,7 +136,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
                     ),
                   ),
                   child: Text(
-                    "${toCountedString("Chain", _annotations.density)} per Inch",
+                    "${"Chain".toCountedString(_annotations.density)} per Inch",
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20.0),
                   ),
                 ),
