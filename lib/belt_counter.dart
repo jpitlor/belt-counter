@@ -19,47 +19,51 @@ class Annotations {
     this.boxes = encodePng(_marker);
 
     final _sample = Image(image.width, image.height);
-    final padding = image.width ~/ 5;
-    _sample.drawRect(sample, color: Colors.tealAccent);
-    _sample.drawLine(sample.item1, sample.item2, padding, image.height - image.width);
-    _sample.drawLine(sample.item3, sample.item2, padding + image.width - (2 * padding), image.height - image.width);
-    _sample.drawLine(sample.item1, sample.item4, padding, image.height - (2 * padding));
-    _sample.drawLine(sample.item3, sample.item4, padding + image.width - (2 * padding), image.height - (2 * padding));
+    final bigSampleX = image.width ~/ 5;
+    final bigSampleY = image.height - image.width;
+
+    final sampleSize = sample.item3 - sample.item1;
+    final bigSampleSize = image.width - (2 * bigSampleX);
+    final bigSampleSizeRatio = bigSampleSize / sampleSize;
+
+    _sample.drawRect(sample, color: Colors.cyanAccent);
+    _sample.drawLine(sample.item1, sample.item2, bigSampleX, bigSampleY);
+    _sample.drawLine(sample.item3, sample.item2, bigSampleX + bigSampleSize, bigSampleY);
+    _sample.drawLine(sample.item1, sample.item4, bigSampleX, bigSampleY + bigSampleSize);
+    _sample.drawLine(sample.item3, sample.item4, bigSampleX + bigSampleSize, bigSampleY + bigSampleSize);
     copyInto(
       _sample,
       copyRotate(
         copyResize(
-          copyCrop(image, sample.item1, sample.item2, sample.item3 - sample.item1, sample.item4 - sample.item2),
-          width: image.width - (2 * padding),
-          height: image.width - (2 * padding),
+          copyCrop(image, sample.item1, sample.item2, sampleSize, sampleSize),
+          width: bigSampleSize,
+          height: bigSampleSize,
         ),
         90,
       ),
-      dstX: padding,
-      dstY: image.height - image.width,
+      dstX: bigSampleX,
+      dstY: bigSampleY,
       srcX: 0,
       srcY: 0,
-      srcW: image.width - (2 * padding),
-      srcH: image.width - (2 * padding),
+      srcW: bigSampleSize,
+      srcH: bigSampleSize,
     );
-    final sideSize = image.width - (2 * padding);
-    _sample.drawRect(toCoordinates(padding, image.height - image.width, sideSize, sideSize), color: Colors.tealAccent);
+    _sample.drawSquare(bigSampleX, bigSampleY, bigSampleSize, color: Colors.cyanAccent);
 
     final densities = List<int>();
-    final sampleWidth = sample.item3 - sample.item1;
-    final enlargedWidth = image.width - (2 * padding);
     for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
       final row = chains.where((element) => element.item2 == y);
       densities.add(row.length);
       for (var value in row) {
-        final dx = (value.item1 - sample.item1) * (enlargedWidth ~/ sampleWidth);
-        final dy = (value.item2 - sample.item2) * (enlargedWidth ~/ sampleWidth);
+        final dx = (value.item1 - sample.item1) * bigSampleSizeRatio;
+        final dy = (value.item2 - sample.item2) * bigSampleSizeRatio;
 
-        _sample.drawCircle(padding + dx, image.height - image.width + dy, 8, thickness: 4);
+        _sample.drawCircle((bigSampleX + dx).floor(), (bigSampleY + dy).floor(), 8, thickness: 3);
       }
     }
     this.sample = encodePng(_sample);
 
+    densities.forEach(print);
     this.density = densities.reduce((value, element) => value + element) ~/ densities.length;
   }
 
@@ -75,15 +79,15 @@ Annotations getAnnotations(List<int> bytes) {
   final marker = _findMarker(image);
   final sample = _findBeltSample(image, marker);
 
-  var inBelt = false;
   final chains = List<Tuple2<int, int>>();
   for (var y = sample.item2 + 10; y < sample.item4 - 10; y += ((sample.item4 - 10) - (sample.item2 + 10)) ~/ 10) {
-    inBelt = false;
-    for (var x = sample.item1; x < sample.item3; x++) {
-      var isWhite = _isWhite(image.getPixel(x, y));
-      if (isWhite && !inBelt) chains.add(Tuple2(x, y));
-      inBelt = isWhite;
-    }
+    final rowChains = image
+        .getRowOfPixels(sample.item1, sample.item3, y)
+        .map(_averageColorValue)
+        .toList()
+        .getLocalMaxima()
+        .map((i) => Tuple2(sample.item1 + i, y));
+    chains.addAll(rowChains);
   }
 
   return Annotations(image: image, marker: marker, sample: sample, chains: chains);
@@ -100,7 +104,8 @@ Tuple4<int, int, int, int> _findBeltSample(Image image, Tuple4<int, int, int, in
   } else if (marker.item3 + ppi < image.width) {
     // Right
     return Tuple4(marker.item3, marker.item4 - ppi, marker.item3 + ppi, marker.item4);
-  } else /* if (marker.item4 + ppi < image.height) */ {
+  } else {
+    // if (marker.item4 + ppi < image.height)
     // Bottom
     return Tuple4(marker.item3 - ppi, marker.item4, marker.item3, marker.item4 + ppi);
   }
@@ -114,35 +119,36 @@ Tuple4<int, int, int, int> _findMarker(Image image) {
     }
   }
 
-  var x1 = greens.map((x) => x.item1).reduce(min);
-  var y1 = greens.map((x) => x.item2).reduce(min);
-  var x2 = greens.map((x) => x.item1).reduce(max);
-  var y2 = greens.map((x) => x.item2).reduce(max);
+  final x1 = greens.map((x) => x.item1).reduce(min);
+  final y1 = greens.map((x) => x.item2).reduce(min);
+  final x2 = greens.map((x) => x.item1).reduce(max);
+  final y2 = greens.map((x) => x.item2).reduce(max);
 
   return Tuple4(x1, y1, x2, y2);
 }
 
 bool _isGreen(int pixel) {
-  var red = pixel & 0xFF;
-  var green = (pixel & 0xFF00) >> 8;
-  var blue = (pixel & 0xFF0000) >> 16;
-  var tolerance = 20;
+  final red = pixel & 0xFF;
+  final green = (pixel & 0xFF00) >> 8;
+  final blue = (pixel & 0xFF0000) >> 16;
+  final tolerance = 20;
 
   return green > red + tolerance && green > blue + tolerance;
 }
 
 bool _isWhite(int pixel) {
-  var red = pixel & 0xFF;
-  var green = (pixel & 0xFF00) >> 8;
-  var blue = (pixel & 0xFF0000) >> 16;
+  final red = pixel & 0xFF;
+  final green = (pixel & 0xFF00) >> 8;
+  final blue = (pixel & 0xFF0000) >> 16;
+  final tolerance = 50;
 
-  var tolerance = 2.0;
-  var min = 50;
+  return red >= tolerance && green >= tolerance && blue >= tolerance;
+}
 
-  return (max(1.0 * red / green, 1.0 * green / red) <= tolerance) &&
-      (max(1.0 * red / blue, 1.0 * blue / red) <= tolerance) &&
-      (max(1.0 * green / blue, 1.0 * blue / green) <= tolerance) &&
-      red >= min &&
-      green >= min &&
-      blue >= min;
+double _averageColorValue(int pixel) {
+  final red = pixel & 0xFF;
+  final green = (pixel & 0xFF00) >> 8;
+  final blue = (pixel & 0xFF0000) >> 16;
+
+  return (red + green + blue) / 3;
 }

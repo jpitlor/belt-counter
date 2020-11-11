@@ -68,12 +68,12 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
               CheckedPopupMenuItem(
                 checked: _showBoxAnnotations,
                 value: AnnotationTypes.Boxes,
-                child: Text("Show Boxes"),
+                child: Text("Highlight Marker"),
               ),
               CheckedPopupMenuItem(
                 checked: _showSampleAnnotation,
                 value: AnnotationTypes.Sample,
-                child: Text("Show Sample"),
+                child: Text("Enlarge Sample"),
               ),
               CheckedPopupMenuItem(
                 checked: _showDensityAnnotation,
