@@ -1,3 +1,8 @@
+# Archive Note
+
+Ultimately, the algorithm to find belt density did not work. My dad (who I was making this for) changed jobs, so the project was abandoned. 
+It may have been a good candidate for ML or something like that.
+
 # Belt Counter
 
 An app made with [Flutter](https://flutter.dev) made to help calculating chain density on a conveyor belt easy, especially for high density belts.
